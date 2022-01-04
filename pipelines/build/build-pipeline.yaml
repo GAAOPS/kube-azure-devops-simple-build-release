@@ -1,0 +1,52 @@
+trigger:
+  branches:
+    include:
+    - 'master'
+
+variables:
+  containerServiceConnection: 'Docker-Hub'
+  containerImageRepository: 'ghodrat/aspnet-sample-private'
+  dockerFilePath: '$(Build.SourcesDirectory)/src/SampleWeb/Dockerfile'
+  dockerBuildContext: '$(Build.SourcesDirectory)/src'
+
+jobs:
+  - job: Release
+    displayName: Prepare Release
+    pool: 
+      name: default
+      demands:
+        - Agent.OS -equals Linux
+
+    steps:
+    - task: Docker@2
+      displayName: Login to Docker Hub
+      inputs:
+        containerRegistry: '$(containerServiceConnection)'
+        command: 'login'
+
+    - task: Docker@2
+      displayName: Build and push image
+      inputs:
+        containerRegistry: '$(containerServiceConnection)'
+        repository: '$(containerImageRepository)'
+        command: 'buildAndPush'
+        Dockerfile: '$(dockerFilePath)'
+        buildContext: '$(dockerBuildContext)'
+        tags: |
+          $(Build.BuildId)
+          $(Build.SourceVersion)
+
+    - task: CopyFiles@2
+      displayName: Copy kube manifests
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/deployment/kube-manifests'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        OverWrite: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: Publish manifests Artifact
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'kube-manifests'
+        publishLocation: 'Container'
