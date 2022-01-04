@@ -1,0 +1,6 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linux-web
+spec:
+  replicas: 3

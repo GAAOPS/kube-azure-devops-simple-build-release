@@ -1,0 +1,7 @@
+bases:
+  - ../../app
+
+patches:
+  - ingress.yaml
+  - replication.yaml
+  - variables.yaml
